@@ -16,6 +16,6 @@ void main(List<String> args) async {
     packageStore: packageStore,
   );
   final portEnv = Platform.environment['PORT'];
-  final server = await app.serve('0.0.0.0', portEnv ?? 8080);
+  final server = await app.serve('0.0.0.0', int.tryParse(portEnv) ?? 8080);
   print('Serving at http://${server.address.host}:${server.port}');
 }
