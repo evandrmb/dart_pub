@@ -1,4 +1,5 @@
 import 'package:unpub/unpub.dart' as unpub;
+import 'dart:io' show Platform;
 
 void main(List<String> args) async {
   const basedir = '/packages';
@@ -14,7 +15,7 @@ void main(List<String> args) async {
     metaStore: metaStore,
     packageStore: packageStore,
   );
-
-  final server = await app.serve('0.0.0.0', 8080);
+  final portEnv = Platform.environment['PORT'];
+  final server = await app.serve('0.0.0.0', portEnv ?? 8080);
   print('Serving at http://${server.address.host}:${server.port}');
 }
