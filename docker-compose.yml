@@ -5,10 +5,4 @@ services:
     build: .
     ports:
       - 4000:8080
-    volumes:
-      - packages:/packages
     entrypoint: ["/app/bin/server.exe"]
-
-volumes:
-  packages:
-  db_data:

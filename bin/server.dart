@@ -1,21 +1,39 @@
 import 'package:unpub/unpub.dart' as unpub;
 import 'dart:io' show Platform;
+import 'package:unpub_aws/unpub_aws.dart' as unpub_aws;
+import 'package:mongo_dart/mongo_dart.dart';
+import 'package:unpub_aws/unpub_aws.dart';
 
 void main(List<String> args) async {
-  const basedir = '/packages';
-  const db =
-      'mongodb://ap_master:L043Ya1aMiWiaCnFijUF@apogeupubdev-shard-00-00.93vch.mongodb.net:27017,apogeupubdev-shard-00-01.93vch.mongodb.net:27017,apogeupubdev-shard-00-02.93vch.mongodb.net:27017/ApogeuPubDev?ssl=true&replicaSet=atlas-kmsagm-shard-0&authSource=admin&retryWrites=true&w=majority';
+  final dbUri = Platform.environment['MONGODB_URI'];
 
-  final metaStore = unpub.MongoStore(db);
+  if (dbUri == null) {
+    throw StateError('Mongo URI was not defined');
+  }
+
+  final metaStore = unpub.MongoStore(Db(dbUri));
   await metaStore.db.open();
 
-  final packageStore = unpub.FileStore(basedir);
+  final awsId = Platform.environment['AWS_ACCESS_KEY_ID'];
+  final secret = Platform.environment['AWS_SECRET_ACCESS_KEY'];
 
   final app = unpub.App(
     metaStore: metaStore,
-    packageStore: packageStore,
+    packageStore: unpub_aws.S3Store(
+      'apogeu-unpub',
+      region: 'us-east-2',
+      // endpoint: 'aws-alternative.example.com',
+      getObjectPath: (String name, String version) =>
+          '$name/$name-$version.tar.gz',
+      credentials: AwsCredentials(
+          awsAccessKeyId: awsId ?? '', awsSecretAccessKey: secret ?? ''),
+    ),
   );
+
   final portEnv = Platform.environment['PORT'];
-  final server = await app.serve('0.0.0.0', int.tryParse(portEnv) ?? 8080);
+
+  final server =
+      await app.serve('0.0.0.0', int.tryParse(portEnv ?? '') ?? 8080);
+
   print('Serving at http://${server.address.host}:${server.port}');
 }
